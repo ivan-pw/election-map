@@ -29,6 +29,10 @@
   "dependencies": {
     "core-js": "^3.6.5",
     "leaflet": "^1.6.0",
+    "leaflet-plugins": "^3.3.1",
+    "proj4": "^2.6.2",
+    "proj4js": "^10.0.0",
+    "proj4leaflet": "^1.0.2",
     "ymaps": "^0.2.1"
   }
 }

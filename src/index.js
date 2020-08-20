@@ -1,60 +1,67 @@
 'use strict';
 
 import './scss/style.scss';
+
 import L from 'leaflet';
+import 'leaflet-plugins/layer/tile/Yandex.js';
 import 'leaflet/dist/leaflet.css';
+import ymaps from 'ymaps';
 
+const apikey = '44f9c843-38d6-49d5-9cb1-7ce14746edf9';
 
-const proj = L.CRS.EPSG3857;
-const map = L.map('map', {
+ymaps
+    .load('https://api-maps.yandex.ru/2.1/?lang=en_US&mode=debug&apikey=' + apikey)
+    .then((ymaps) => {
+      const map = L.map('map', {
 
-}).setView([51.505, -0.09], 7);
-const mLayer = L.tileLayer('http://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}', {
-  attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-  maxZoom: 18,
-  id: 'mapbox.streets',
-});
+      }).setView([0, 0], 7);
 
-console.log(map);
-
-
-mLayer.addTo(map);
-
-
-fetch('30perc.geojson')
-    .then((responce) => responce.json())
-    .then((data) => {
-      console.log(data.features);
-
-      const myStyle = {
-        'color': '#ff7800',
-        'weight': 5,
-        'opacity': 0.65,
+      const baseLayers = {
+        'Yandex map': L.yandex() // 'map' is default
+            .addTo(map),
+        'Yandex satellite': L.yandex({type: 'satellite'}), // type can be set in options
+        'Yandex hybrid': L.yandex('hybrid'),
+        'OSM': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }),
       };
 
+      console.log(map);
 
-      data.features.forEach(function(obj) {
-        L.geoJSON(obj, {style: myStyle}).addTo(map);
-        obj.geometry.coordinates[0][0].forEach((coord, i)=>{
-          // const lat = proj.unproject(new L.Point(...coord)).lat;
-          // const lng = proj.unproject(new L.Point(...coord)).lng;
+      L.control.layers(baseLayers).addTo(map);
 
 
-          // console.log(L.Projection.SphericalMercator.unproject(new L.Point(...coord)));
-          const lat = L.Projection.SphericalMercator.unproject(new L.Point(...coord)).lat;
-          const lng = L.Projection.SphericalMercator.unproject(new L.Point(...coord)).lng;
+      fetch('30perc.geojson')
+          .then((responce) => responce.json())
+          .then((data) => {
+            console.log(data.features);
+
+            const myStyle = {
+              'color': '#ff7800',
+              'weight': 5,
+              'opacity': 0.65,
+            };
 
 
-          // console.log([lat, lng]);
-          obj.geometry.coordinates[0][0][i] = [lat, lng];
-        });
+            data.features.forEach(function(obj) {
+              // не Крым
+              if (
+                obj.properties.okrug != 219 &&
+                obj.properties.okrug != 21 &&
+                obj.properties.okrug != 20 &&
+                obj.properties.okrug != 19
+              ) {
+                L.geoJSON(obj, {style: myStyle}).addTo(map);
+                console.log(obj);
 
-        console.log(obj);
-
-        L.geoJSON(obj, {
-          style: myStyle,
-        }).addTo(map);
-      });
+                L.geoJSON(obj, {
+                  style: myStyle,
+                }).addTo(map).addEventListener('click', (e)=>{
+                  console.log(e);
+                });
+              }
+            });
+          });
     });
 
 
