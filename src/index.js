@@ -5,12 +5,13 @@ import './scss/style.scss';
 import L from 'leaflet';
 import 'leaflet-plugins/layer/tile/Yandex.js';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-control-geocoder';
 import ymaps from 'ymaps';
 
-const apikey = '44f9c843-38d6-49d5-9cb1-7ce14746edf9';
+const yaApikey = '44f9c843-38d6-49d5-9cb1-7ce14746edf9';
 
 ymaps
-    .load('https://api-maps.yandex.ru/2.1/?lang=en_US&mode=debug&apikey=' + apikey)
+    .load('https://api-maps.yandex.ru/2.1/?lang=en_US&mode=debug&apikey=' + yaApikey)
     .then((ymaps) => {
       const map = L.map('map', {
 
@@ -29,6 +30,26 @@ ymaps
       console.log(map);
 
       L.control.layers(baseLayers).addTo(map);
+
+      console.log(L.Control.geocoder({geocodingQueryParams:{countrycodes:"gb"}}));
+      L.Control.geocoder({geocodingQueryParams:{countrycodes:"gb"}}).addTo(map);
+
+      var geocoder = L.Control.geocoder({
+        defaultMarkGeocode: false,
+        geocoder: new L.Control.Geocoder.Nominatim(),
+      })
+        .on('markgeocode', function(e) {
+          console.log(e);
+          var bbox = e.geocode.bbox;
+          var poly = L.polygon([
+            bbox.getSouthEast(),
+            bbox.getNorthEast(),
+            bbox.getNorthWest(),
+            bbox.getSouthWest()
+          ]).addTo(map);
+          map.fitBounds(poly.getBounds());
+        })
+        .addTo(map);
 
 
       fetch('30perc.geojson')
@@ -52,7 +73,7 @@ ymaps
                 obj.properties.okrug != 19
               ) {
                 L.geoJSON(obj, {style: myStyle}).addTo(map);
-                console.log(obj);
+                //console.log(obj);
 
                 L.geoJSON(obj, {
                   style: myStyle,
